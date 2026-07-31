@@ -350,11 +350,10 @@ canvas#game {
   gap: 6px;
 }
 
-.tb-move {
-  grid-template-columns: repeat(3, 1fr);
-  align-items: stretch;
-}
-
+/* Both sides share the exact same 2-big-buttons-over-1-strip grid so they
+   line up at the same height — mismatched grids (3 small buttons vs 2 big +
+   a strip) is what made the bar look broken/asymmetric. */
+.tb-move,
 .tb-action {
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr auto;
@@ -384,13 +383,9 @@ canvas#game {
   transform: none;
 }
 
-.tb-arrow {
-  font-size: 24px;
-}
-
-/* Rotate + hard drop are the two buttons you actually mash mid-game, so they
-   get the full-size primary slots. Hold is occasional and sits underneath,
-   smaller — not competing on equal footing with the two you rely on. */
+/* Rotate/hard-drop and left/right are the buttons you actually mash mid-game,
+   so they get the full-size primary slots. Soft-drop and hold are occasional
+   and sit underneath, smaller — not competing on equal footing. */
 .tb-big {
   min-height: 64px;
   font-size: 30px;
@@ -647,7 +642,6 @@ canvas#game {
   color: var(--ink);
   overflow: hidden;
   position: relative;
-  font-size: 44px;
   /* fade the strip near the top/bottom edge so symbols scrolling past don't
      hard-clip mid-glyph — reads as a real reel window, not a cropped box */
   mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
@@ -670,6 +664,16 @@ canvas#game {
   align-items: center;
   justify-content: center;
   flex: none;
+}
+
+/* Hand-drawn SVG symbols, not emoji — emoji render as a different glyph per
+   OS/font (and some platforms fall back to a blank box), which is part of
+   why the reels looked cheap. These are real vector assets in the game's
+   own flat/ink-outline style. */
+.reel-ico {
+  width: 58px;
+  height: 58px;
+  display: block;
 }
 
 .winline {
@@ -925,18 +929,28 @@ canvas#game {
     grid-column: 1 / -1;
     grid-row: 1;
     justify-self: center;
-    width: 300px;
+    width: fit-content;
+    height: auto;
   }
 
+  /* Scale the board to whatever height is actually left in the viewport
+     after the header + touch bar, instead of a fixed 560px. On a short
+     phone viewport a fixed-size board pushed the touch bar off-screen
+     entirely, so playing meant scrolling down mid-game to reach it. */
   canvas#game {
-    width: 280px;
-    height: 560px;
+    width: auto;
+    height: clamp(300px, calc(100dvh - 250px), 560px);
+    aspect-ratio: 1 / 2;
+    display: block;
   }
 
   .touchbar {
     grid-column: 1 / -1;
     grid-row: 2;
     display: grid;
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
   }
 
   .panel {
