@@ -33,12 +33,16 @@
   </div>
 
   <div class="touchbar" id="touchbar">
-    <button data-act="hold" style="font-size:16px">HOLD</button>
-    <button data-act="left">◀</button>
-    <button data-act="right">▶</button>
-    <button data-act="rotate">⟳</button>
-    <button data-act="soft" class="tb-wide" style="font-size:15px">▼ SOFT</button>
-    <button data-act="hard" class="tb-wide" style="font-size:15px">⤓ DROP</button>
+    <div class="tb-side tb-move">
+      <button data-act="left" class="tb-btn tb-arrow">◀</button>
+      <button data-act="soft" class="tb-btn tb-arrow">▼</button>
+      <button data-act="right" class="tb-btn tb-arrow">▶</button>
+    </div>
+    <div class="tb-side tb-action">
+      <button data-act="rotate" class="tb-btn tb-big">⟳</button>
+      <button data-act="hard" class="tb-btn tb-big">⤓</button>
+      <button data-act="hold" class="tb-btn tb-hold">HOLD</button>
+    </div>
   </div>
 
   <section class="panel queue-panel">
@@ -82,9 +86,9 @@
       <div class="sub" id="freebonus-sub">No strings attached. Trust us. (timer resets every time you look away)</div>
     </div>
     <div class="slots">
-      <div class="slot-reel" id="reel1"><div class="sym">🍒</div></div>
-      <div class="slot-reel" id="reel2"><div class="sym">🍒</div></div>
-      <div class="slot-reel" id="reel3"><div class="sym">🍒</div></div>
+      <div class="slot-reel" id="reel1"><div class="strip"><div>🍒</div></div></div>
+      <div class="slot-reel" id="reel2"><div class="strip"><div>🍒</div></div></div>
+      <div class="slot-reel" id="reel3"><div class="strip"><div>🍒</div></div></div>
     </div>
     <div class="winline" id="winline">Spin to win big, king.</div>
     <div class="bet-row">
@@ -389,13 +393,26 @@ function renderBet(){
   document.getElementById('bet-amt').textContent = bet + ' WB';
   document.getElementById('spin-btn').textContent = 'SPIN (' + bet + ')';
 }
+// A real scrolling reel strip, not a single emoji jittering in place: each
+// reel gets a column of random symbols with the final result appended at
+// the end, and the whole strip is transitioned upward with an ease-out
+// curve so it looks like it decelerates onto the result instead of
+// abruptly swapping text (the old flicker).
+const REEL_H = 106;
+const REEL_STOPS = [1400, 1900, 2400];
+function buildStripSymbols(final){
+  const count = 18 + ((Math.random()*6)|0);
+  const arr = [];
+  for(let i=0;i<count;i++) arr.push(SYMS[(Math.random()*SYMS.length)|0]);
+  arr.push(final);
+  return arr;
+}
 function spinSlots(){
   if(slotLock) return;
   if(wb < bet){ toast('Broke. The casino is NOT sorry.', '#ff6b6b'); return; }
   addWB(-bet);
   slotLock = true;
   const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
-  reels.forEach(r=>{ r.classList.add('spinning'); });
   const results = [SYMS[(Math.random()*SYMS.length)|0], SYMS[(Math.random()*SYMS.length)|0], SYMS[(Math.random()*SYMS.length)|0]];
   // dark pattern: force near-miss sometimes — two matching + one just off
   if(Math.random()<0.35){
@@ -405,10 +422,18 @@ function spinSlots(){
     while(off===s) off = SYMS[(Math.random()*SYMS.length)|0];
     results[2]=off;
   }
-  const stops = [1400, 1900, 2400].map((t,i)=>setTimeout(()=>{
-    reels[i].classList.remove('spinning');
-    reels[i].querySelector('.sym').textContent = results[i];
-  }, t));
+  reels.forEach((r,i)=>{
+    const strip = r.querySelector('.strip');
+    const symbols = buildStripSymbols(results[i]);
+    strip.innerHTML = symbols.map(s=>`<div>${s}</div>`).join('');
+    strip.style.transition = 'none';
+    strip.style.transform = 'translateY(0)';
+    void strip.offsetHeight; // force reflow before re-enabling the transition
+    const travel = (symbols.length - 1) * REEL_H;
+    const duration = REEL_STOPS[i] / 1000;
+    strip.style.transition = `transform ${duration}s cubic-bezier(.13,.85,.25,1)`;
+    strip.style.transform = `translateY(-${travel}px)`;
+  });
   setTimeout(()=>{
     slotLock = false;
     const [a,b,c] = results;
@@ -553,6 +578,9 @@ function setupCasino(){
 }
 
 // ============ CHIBI FACE RENDERER ============
+// preload the waifu portraits so tiles can render the real art
+const WAIFU_IMGS = {};
+Object.keys(WAIFU_IMG).forEach(k=>{ const im = new Image(); im.src = WAIFU_IMG[k]; WAIFU_IMGS[k] = im; });
 function skinFor(type){
   const s = SKINS.find(k=>k.id===equippedSkin) || SKINS[0];
   return s;
@@ -586,6 +614,25 @@ function drawWaifu(ctx, px, py, s, type, opts={}){
   roundRect(ctx, px+pad, py+pad, s-pad*2, s-pad*2, s*0.18);
   ctx.stroke();
   ctx.shadowBlur = 0;
+
+  // waifu portrait on the tile: clip the art into the rounded block
+  const img = WAIFU_IMGS[type];
+  if(img && img.complete && img.naturalWidth>0){
+    ctx.save();
+    roundRect(ctx, px+pad, py+pad, s-pad*2, s-pad*2, s*0.18);
+    ctx.clip();
+    ctx.drawImage(img, px+pad, py+pad, s-pad*2, s-pad*2);
+    ctx.restore();
+    // crisp border back on top
+    ctx.strokeStyle = borderColor; ctx.lineWidth = Math.max(1.4, s*0.06);
+    roundRect(ctx, px+pad, py+pad, s-pad*2, s-pad*2, s*0.18);
+    ctx.stroke();
+    // soft gloss so the tile still reads as a block
+    ctx.fillStyle = 'rgba(255,255,255,.16)';
+    roundRect(ctx, px+pad, py+pad, s-pad*2, s*0.14, s*0.12);
+    ctx.fill();
+    return;
+  }
 
   const cx = px + s/2;
   const cy = py + s*0.56;   // face center slightly low
@@ -962,22 +1009,53 @@ function doHold(){
 }
 
 // ============ TOUCH CONTROLS ============
+// Each button owns its own press-and-hold repeat timer (stored on the element
+// itself) so tapping left/right never leaves a stray "held" state behind —
+// previously a single tap set a shared dasDir flag that only cleared on
+// keyup, so a tap on a touch button made the piece drift forever.
 function bindTouch(){
+  const REPEAT_DELAY = 220; // ms before a held button starts auto-repeating
+  const REPEAT_RATE = 55;   // ms between repeats while held
   const act = {
-    hold: ()=>{ audio(); if(started && !paused) doHold(); },
-    left: ()=>{ audio(); if(started && !paused && move(-1,0)) dasDir=-1; },
-    right: ()=>{ audio(); if(started && !paused && move(1,0)) dasDir=1; },
-    rotate: ()=>{ audio(); if(started && !paused){ rotate(); tone(440,0.05,'square',0.06); } },
-    soft: ()=>{ audio(); keysDown['SoftDrop'] = true; },
-    hard: ()=>{ audio(); if(started && !paused) hardDrop(); },
+    hold: ()=>{ if(started && !paused) doHold(); },
+    left: ()=>{ if(started && !paused) move(-1,0); },
+    right: ()=>{ if(started && !paused) move(1,0); },
+    rotate: ()=>{ if(started && !paused){ rotate(); tone(440,0.05,'square',0.06); } },
+    soft: ()=>{ keysDown['SoftDrop'] = true; },
+    hard: ()=>{ if(started && !paused) hardDrop(); },
   };
+  const REPEATABLE = { left:true, right:true, soft:true };
+
+  function clearTimers(btn){
+    if(btn._tbDelay) clearTimeout(btn._tbDelay);
+    if(btn._tbRate) clearInterval(btn._tbRate);
+    btn._tbDelay = null; btn._tbRate = null;
+  }
+  function pressStart(btn, fn){
+    clearTimers(btn);
+    btn.classList.add('pressed');
+    audio();
+    fn();
+    if(REPEATABLE[btn.dataset.act]){
+      btn._tbDelay = setTimeout(()=>{ btn._tbRate = setInterval(fn, REPEAT_RATE); }, REPEAT_DELAY);
+    }
+  }
+  function pressEnd(btn){
+    clearTimers(btn);
+    btn.classList.remove('pressed');
+    if(btn.dataset.act==='soft') keysDown['SoftDrop'] = false;
+  }
+
   document.querySelectorAll('#touchbar button').forEach(b=>{
-    const a = act[b.dataset.act];
-    if(!a) return;
-    b.addEventListener('touchstart', e=>{ e.preventDefault(); a(); }, {passive:false});
-    b.addEventListener('mousedown', e=>{ e.preventDefault(); a(); });
+    const fn = act[b.dataset.act];
+    if(!fn) return;
+    b.addEventListener('touchstart', e=>{ e.preventDefault(); pressStart(b, fn); }, {passive:false});
+    b.addEventListener('touchend', e=>{ e.preventDefault(); pressEnd(b); }, {passive:false});
+    b.addEventListener('touchcancel', e=>{ e.preventDefault(); pressEnd(b); }, {passive:false});
+    b.addEventListener('mousedown', e=>{ e.preventDefault(); pressStart(b, fn); });
+    b.addEventListener('mouseup', ()=>pressEnd(b));
+    b.addEventListener('mouseleave', ()=>pressEnd(b));
   });
-  document.addEventListener('touchend', e=>{ if(e.target.dataset && e.target.dataset.act==='soft') keysDown['SoftDrop']=false; });
 }
 
 // ============ FLOW ============

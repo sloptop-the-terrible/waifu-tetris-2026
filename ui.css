@@ -329,37 +329,77 @@ canvas#game {
 
 .touchbar {
   display: none;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 0;
+  padding: 8px;
   background: var(--ink);
   border: 1px solid var(--ink);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
-.touchbar button {
-  min-height: 50px;
+/* Left half = movement (left thumb), right half = actions (right thumb) —
+   mirrors how a phone is actually held in landscape/portrait, instead of
+   the old single row where left/right/rotate were all crammed together. */
+.tb-side {
+  display: grid;
+  gap: 6px;
+}
+
+.tb-move {
+  grid-template-columns: repeat(3, 1fr);
+  align-items: stretch;
+}
+
+.tb-action {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr auto;
+  gap: 6px;
+}
+
+.touchbar .tb-btn {
+  min-height: 56px;
   padding: 10px 4px;
   background: var(--paper);
   border: 0;
-  border-radius: 0;
+  border-radius: 8px;
   box-shadow: none;
   color: var(--ink);
   cursor: pointer;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-.touchbar button:active {
+.touchbar .tb-btn:active,
+.touchbar .tb-btn.pressed {
   background: var(--pink);
   color: white;
   transform: none;
 }
 
-.touchbar .tb-wide {
-  grid-column: span 2;
+.tb-arrow {
+  font-size: 24px;
+}
+
+/* Rotate + hard drop are the two buttons you actually mash mid-game, so they
+   get the full-size primary slots. Hold is occasional and sits underneath,
+   smaller — not competing on equal footing with the two you rely on. */
+.tb-big {
+  min-height: 64px;
+  font-size: 30px;
+}
+
+.tb-hold {
+  grid-column: 1 / span 2;
+  min-height: 38px;
+  font-size: 13px;
 }
 
 /* Title screen: a game attract screen, not a modal card. */
@@ -607,24 +647,29 @@ canvas#game {
   color: var(--ink);
   overflow: hidden;
   position: relative;
+  font-size: 44px;
+  /* fade the strip near the top/bottom edge so symbols scrolling past don't
+     hard-clip mid-glyph — reads as a real reel window, not a cropped box */
+  mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+}
+
+.slot-reel .strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
   display: flex;
   flex-direction: column;
+  will-change: transform;
+}
+
+.slot-reel .strip > div {
+  height: 106px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 44px;
-}
-
-.slot-reel .sym {
-  transition: transform .08s linear;
-}
-
-.slot-reel.spinning .sym {
-  animation: reelspin .12s linear infinite;
-}
-
-@keyframes reelspin {
-  from { transform: translateY(-14px); }
-  to { transform: translateY(14px); }
+  flex: none;
 }
 
 .winline {

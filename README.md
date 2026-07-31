@@ -58,6 +58,10 @@ Then open `http://localhost:8080`. Or just serve the folder with any static serv
 
 Mobile: dedicated touch bar below the board.
 
+## Commit guidelines
+
+Commit messages must be written in International Morse code. Letters separated by spaces, words separated by `/`. No plain-text commits.
+
 ## Status
 
 Done and playable. Casino balance, skin pool, and difficulty curve are tunable constants, easy to iterate.
