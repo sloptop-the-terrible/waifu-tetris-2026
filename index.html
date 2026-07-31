@@ -1161,12 +1161,12 @@ function bindTouch(){
   const REPEAT_DELAY = 220; // ms before a held button starts auto-repeating
   const REPEAT_RATE = 55;   // ms between repeats while held
   const act = {
-    hold: ()=>{ if(started && !paused) doHold(); },
-    left: ()=>{ if(started && !paused && !move(-1,0)) playFaaah(); },
-    right: ()=>{ if(started && !paused && !move(1,0)) playFaaah(); },
-    rotate: ()=>{ if(started && !paused && !rotate()){ playFaaah(); } else if(started && !paused){ tone(440,0.05,'square',0.06); } },
-    soft: ()=>{ keysDown['SoftDrop'] = true; },
-    hard: ()=>{ if(started && !paused) hardDrop(); },
+    hold: ()=>{ if(started && !paused && !gameOver) doHold(); },
+    left: ()=>{ if(started && !paused && !gameOver && !move(-1,0)) playFaaah(); },
+    right: ()=>{ if(started && !paused && !gameOver && !move(1,0)) playFaaah(); },
+    rotate: ()=>{ if(started && !paused && !gameOver && !rotate()){ playFaaah(); } else if(started && !paused && !gameOver){ tone(440,0.05,'square',0.06); } },
+    soft: ()=>{ if(started && !paused && !gameOver) keysDown['SoftDrop'] = true; },
+    hard: ()=>{ if(started && !paused && !gameOver) hardDrop(); },
   };
   const REPEATABLE = { left:true, right:true, soft:true };
 
