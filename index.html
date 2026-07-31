@@ -9,6 +9,42 @@
 </head>
 <body>
 
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="ico-cherry" viewBox="0 0 48 48">
+  <path d="M24 6c-2 4-3 8-2 12" stroke="#3a7d44" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M22 18c3-3 7-4 10-2" stroke="#3a7d44" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="16" cy="32" r="9" fill="#c0233f" stroke="#181316" stroke-width="2.5"/>
+  <circle cx="32" cy="34" r="9" fill="#c0233f" stroke="#181316" stroke-width="2.5"/>
+  <circle cx="13" cy="29" r="2.4" fill="#f2a6b2" opacity=".8"/>
+  <circle cx="29" cy="31" r="2.4" fill="#f2a6b2" opacity=".8"/>
+</symbol>
+<symbol id="ico-diamond" viewBox="0 0 48 48">
+  <polygon points="24,4 40,18 24,44 8,18" fill="#8fd3ff" stroke="#181316" stroke-width="2.5"/>
+  <polygon points="24,4 32,18 24,44 16,18" fill="#c9ecff"/>
+  <line x1="8" y1="18" x2="40" y2="18" stroke="#181316" stroke-width="2"/>
+</symbol>
+<symbol id="ico-moneybag" viewBox="0 0 48 48">
+  <path d="M18 10h12l4 8c5 4 6 10 6 14 0 8-9 12-16 12s-16-4-16-12c0-4 1-10 6-14z" fill="#e7b844" stroke="#181316" stroke-width="2.5"/>
+  <path d="M18 10c0-4 2-6 6-6s6 2 6 6" fill="none" stroke="#181316" stroke-width="2.5"/>
+  <text x="24" y="34" font-size="16" font-weight="900" fill="#181316" text-anchor="middle" font-family="sans-serif">$</text>
+</symbol>
+<symbol id="ico-kimono" viewBox="0 0 48 48">
+  <path d="M24 6l-8 6v8l-10 6v18h36V26l-10-6v-8z" fill="#d92f73" stroke="#181316" stroke-width="2.5"/>
+  <path d="M16 20l8 8 8-8" fill="none" stroke="#181316" stroke-width="2.5"/>
+  <rect x="20" y="26" width="8" height="16" fill="#e7b844" stroke="#181316" stroke-width="2"/>
+</symbol>
+<symbol id="ico-lips" viewBox="0 0 48 48">
+  <path d="M8 22c6-8 12-9 16-6 4-3 10-2 16 6-4 10-10 14-16 14S12 32 8 22z" fill="#d92f73" stroke="#181316" stroke-width="2.5"/>
+  <path d="M8 22c6 3 12 4 16 4s10-1 16-4" fill="none" stroke="#181316" stroke-width="2"/>
+</symbol>
+<symbol id="ico-seven" viewBox="0 0 48 48">
+  <rect x="4" y="4" width="40" height="40" rx="6" fill="#181316"/>
+  <text x="24" y="34" font-size="28" font-weight="900" fill="#e7b844" text-anchor="middle" font-family="Impact, sans-serif">7</text>
+</symbol>
+</defs>
+</svg>
 <main class="machine">
 <header class="masthead">
   <div class="title"><span class="jp">ワイフ・テトリス</span><strong>WAIFU TETRIS</strong></div>
@@ -34,9 +70,9 @@
 
   <div class="touchbar" id="touchbar">
     <div class="tb-side tb-move">
-      <button data-act="left" class="tb-btn tb-arrow">◀</button>
-      <button data-act="soft" class="tb-btn tb-arrow">▼</button>
-      <button data-act="right" class="tb-btn tb-arrow">▶</button>
+      <button data-act="left" class="tb-btn tb-big">◀</button>
+      <button data-act="right" class="tb-btn tb-big">▶</button>
+      <button data-act="soft" class="tb-btn tb-hold">▼ SOFT</button>
     </div>
     <div class="tb-side tb-action">
       <button data-act="rotate" class="tb-btn tb-big">⟳</button>
@@ -86,9 +122,9 @@
       <div class="sub" id="freebonus-sub">No strings attached. Trust us. (timer resets every time you look away)</div>
     </div>
     <div class="slots">
-      <div class="slot-reel" id="reel1"><div class="strip"><div>🍒</div></div></div>
-      <div class="slot-reel" id="reel2"><div class="strip"><div>🍒</div></div></div>
-      <div class="slot-reel" id="reel3"><div class="strip"><div>🍒</div></div></div>
+      <div class="slot-reel" id="reel1"><div class="strip"><div><svg class="reel-ico"><use href="#ico-cherry"></use></svg></div></div></div>
+      <div class="slot-reel" id="reel2"><div class="strip"><div><svg class="reel-ico"><use href="#ico-cherry"></use></svg></div></div></div>
+      <div class="slot-reel" id="reel3"><div class="strip"><div><svg class="reel-ico"><use href="#ico-cherry"></use></svg></div></div></div>
     </div>
     <div class="winline" id="winline">Spin to win big, king.</div>
     <div class="bet-row">
@@ -248,6 +284,8 @@ let score = 0, lines = 0, level = 1, combo = -1;
 let harem = new Set();
 let gameOver = false, paused = false, started = false;
 let dropAcc = 0, lastT = 0;
+let garbageTimer = 0, pendingGarbage = false;
+function garbageInterval(){ return Math.max(11, 25 - level*1.4); }
 let particles = [];
 let toasts = [];
 let flashRows = [];
@@ -381,8 +419,10 @@ function setupFakeNotif(){
 }
 
 // ============ SLOTS ============
-const SYMS = ['🍒','🍒','💎','💰','👘','💋','7'];
-const SYM_PAY = { '🍒':3, '💎':8, '💰':4, '👘':5, '💋':5, '7':20 };
+const SYMS = ['cherry','cherry','diamond','moneybag','kimono','lips','seven'];
+const SYM_PAY = { cherry:3, diamond:8, moneybag:4, kimono:5, lips:5, seven:20 };
+const SYM_LABEL = { cherry:'CHERRIES', diamond:'DIAMONDS', moneybag:'MONEY BAGS', kimono:'KIMONOS', lips:'KISSES', seven:'SEVENS' };
+function symIcon(id){ return `<svg class="reel-ico"><use href="#ico-${id}"></use></svg>`; }
 let bet = 50;
 function setupSlots(){
   document.getElementById('bet-dec').addEventListener('click', ()=>{ bet = Math.max(50, bet-50); renderBet(); });
@@ -409,9 +449,12 @@ function buildStripSymbols(final){
 }
 function spinSlots(){
   if(slotLock) return;
-  if(wb < bet){ toast('Broke. The casino is NOT sorry.', '#ff6b6b'); return; }
+  if(wb < bet){ audio(); tone(90,0.15,'square',0.08); toast('Broke. The casino is NOT sorry.', '#ff6b6b'); return; }
+  audio();
   addWB(-bet);
   slotLock = true;
+  // lever-pull: a quick rising whir under the reel spin-up
+  tone(150,0.09,'sawtooth',0.05); tone(220,0.09,'sawtooth',0.05,0.07); tone(300,0.1,'sawtooth',0.05,0.14);
   const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
   const results = [SYMS[(Math.random()*SYMS.length)|0], SYMS[(Math.random()*SYMS.length)|0], SYMS[(Math.random()*SYMS.length)|0]];
   // dark pattern: force near-miss sometimes — two matching + one just off
@@ -425,7 +468,7 @@ function spinSlots(){
   reels.forEach((r,i)=>{
     const strip = r.querySelector('.strip');
     const symbols = buildStripSymbols(results[i]);
-    strip.innerHTML = symbols.map(s=>`<div>${s}</div>`).join('');
+    strip.innerHTML = symbols.map(s=>`<div>${symIcon(s)}</div>`).join('');
     strip.style.transition = 'none';
     strip.style.transform = 'translateY(0)';
     void strip.offsetHeight; // force reflow before re-enabling the transition
@@ -433,6 +476,8 @@ function spinSlots(){
     const duration = REEL_STOPS[i] / 1000;
     strip.style.transition = `transform ${duration}s cubic-bezier(.13,.85,.25,1)`;
     strip.style.transform = `translateY(-${travel}px)`;
+    // per-reel clunk right as it lands, pitched up for each successive reel
+    setTimeout(()=>{ tone(200+i*60, 0.08, 'square', 0.07); }, REEL_STOPS[i]);
   });
   setTimeout(()=>{
     slotLock = false;
@@ -444,11 +489,13 @@ function spinSlots(){
     const wl = document.getElementById('winline');
     if(mult>0){
       addWB(win);
-      wl.textContent = mult>=3 ? `🔥 ${a}${b}${c} — YOU WIN ${win} WB!` : `So close! ${win} WB pity prize.`;
+      wl.textContent = mult>=3 ? `🔥 ${SYM_LABEL[a]} — YOU WIN ${win} WB!` : `So close! ${win} WB pity prize.`;
       confettiBurst(win>500?40:15);
-      tone(880,0.1,'square',0.08); tone(1100,0.12,'square',0.08,0.1);
+      if(mult>=8){ tone(660,0.09,'square',0.09); tone(880,0.09,'square',0.09,0.09); tone(1100,0.09,'square',0.09,0.18); tone(1320,0.16,'square',0.1,0.27); }
+      else { tone(880,0.1,'square',0.08); tone(1100,0.12,'square',0.08,0.1); }
     } else {
       wl.textContent = `No match. House takes ${bet} WB. Skill issue.`;
+      tone(180,0.1,'sawtooth',0.06); tone(120,0.16,'sawtooth',0.07,0.09);
     }
   }, 2500);
 }
@@ -586,6 +633,15 @@ function skinFor(type){
   return s;
 }
 function drawWaifu(ctx, px, py, s, type, opts={}){
+  if(type === 'garbage'){
+    ctx.fillStyle = '#39303a';
+    roundRect(ctx, px+s*0.05, py+s*0.05, s*0.9, s*0.9, s*0.12);
+    ctx.fill();
+    ctx.strokeStyle = '#181316'; ctx.lineWidth = Math.max(1.2, s*0.06);
+    roundRect(ctx, px+s*0.05, py+s*0.05, s*0.9, s*0.9, s*0.12);
+    ctx.stroke();
+    return;
+  }
   const w = WAIFUS[type];
   const skin = skinFor();
   const pad = s*0.05;
@@ -734,8 +790,15 @@ function lockPiece(){
     if(cur.cells[y][x] && cur.y+y>=0) board[cur.y+y][cur.x+x] = cur.type;
   }
   clearLines();
+  if(pendingGarbage){ addGarbageRow(); pendingGarbage = false; }
   canHold = true;
   spawn();
+}
+function addGarbageRow(){
+  board.shift();
+  const gap = (Math.random()*COLS)|0;
+  board.push(Array.from({length:COLS}, (_,x)=> x===gap ? null : 'garbage'));
+  tone(120,0.18,'sawtooth',0.09);
 }
 
 // ============ LINE CLEAR + HAREM ============
@@ -745,6 +808,7 @@ function clearLines(){
   for(let y=ROWS-1;y>=0;y--){
     if(board[y].every(c=>c)){
       board[y].forEach(t=>collected.add(t));
+      collected.delete('garbage');
       board.splice(y,1);
       board.unshift(Array(COLS).fill(null));
       cleared++; y++; // re-check same row
@@ -759,7 +823,7 @@ function clearLines(){
     if(buffs.escort>0) gained = Math.round(gained*1.5);
     score += gained;
     lines += cleared;
-    level = 1 + Math.floor(lines/10);
+    level = 1 + Math.floor(lines/8);
     const fresh = new Set();
     collected.forEach(t=>{ if(!harem.has(t)) fresh.add(t); harem.add(t); });
     fresh.forEach(t=>toasts.push({ name: WAIFUS[t].name, t: 2.2 }));
@@ -871,10 +935,12 @@ function render(){
   if(gameOver){
     gctx.fillStyle = 'rgba(10,4,18,.65)';
     gctx.fillRect(0,0,gameCv.width,gameCv.height);
+    // shame flag easter egg: lose and the flag of shame appears
+    drawShameFlag(gctx, gameCv.width/2, gameCv.height/2-52, 96, 66);
     gctx.fillStyle = '#ff5fb0'; gctx.font = '900 22px sans-serif'; gctx.textAlign='center';
-    gctx.fillText('GAME OVER', gameCv.width/2, gameCv.height/2-8);
+    gctx.fillText('GAME OVER', gameCv.width/2, gameCv.height/2+30);
     gctx.fillStyle = '#f3e8ff'; gctx.font = '600 13px sans-serif';
-    gctx.fillText(`Score ${score} · ${harem.size}/7 waifus`, gameCv.width/2, gameCv.height/2+18);
+    gctx.fillText(`Score ${score} · ${harem.size}/7 waifus`, gameCv.width/2, gameCv.height/2+52);
   }
   if(paused && !gameOver){
     gctx.fillStyle = 'rgba(10,4,18,.6)';
@@ -883,10 +949,36 @@ function render(){
     gctx.fillText('PAUSED', gameCv.width/2, gameCv.height/2);
   }
 }
+function drawShameFlag(ctx, cx, cy, w, h){
+  // white field
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(cx-w/2, cy-h/2, w, h);
+  // top/bottom stripes
+  ctx.fillStyle = '#0038b8';
+  const stripe = h*0.13;
+  ctx.fillRect(cx-w/2, cy-h/2, w, stripe);
+  ctx.fillRect(cx-w/2, cy+h/2-stripe, w, stripe);
+  // star of david: two overlapping triangles, outlined
+  const r = h*0.24;
+  ctx.strokeStyle = '#0038b8';
+  ctx.lineWidth = Math.max(2, w*0.045);
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx, cy-r);
+  ctx.lineTo(cx + r*0.866, cy + r*0.5);
+  ctx.lineTo(cx - r*0.866, cy + r*0.5);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy+r);
+  ctx.lineTo(cx + r*0.866, cy - r*0.5);
+  ctx.lineTo(cx - r*0.866, cy - r*0.5);
+  ctx.closePath();
+  ctx.stroke();
+}
 function heart(ctx,x,y,s){
   ctx.beginPath();
-  ctx.moveTo(x,y+s*0.3);
-  ctx.bezierCurveTo(x-s*1.2,y-s*0.4,x-s*0.4,y-s*1.1,x,y-s*0.4);
+  ctx.moveTo(x,y+s*0.3);  ctx.bezierCurveTo(x-s*1.2,y-s*0.4,x-s*0.4,y-s*1.1,x,y-s*0.4);
   ctx.bezierCurveTo(x+s*0.4,y-s*1.1,x+s*1.2,y-s*0.4,x,y+s*0.3);
   ctx.fill();
 }
@@ -931,7 +1023,7 @@ function renderHarem(newOnes){
 }
 
 // ============ GAME LOOP ============
-function gravityInterval(){ return Math.max(80, 620 - (level-1)*55); }
+function gravityInterval(){ return Math.max(55, 560 - (level-1)*70); }
 function step(){
   const now = performance.now();
   const dt = Math.min(0.1, (now-lastT)/1000); lastT = now;
@@ -946,6 +1038,8 @@ function step(){
       if(keysDown['ArrowDown'] || keysDown['SoftDrop']) score += 1;
     }
     if(autoDemo){ score += 1; }
+    garbageTimer += dt;
+    if(garbageTimer >= garbageInterval()){ garbageTimer = 0; pendingGarbage = true; }
   }
   // particles
   for(const p of particles){ p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 200*dt; p.life -= dt*1.6; }
@@ -1063,7 +1157,7 @@ function resetGame(){
   board = Array.from({length:ROWS},()=>Array(COLS).fill(null));
   bag=[]; queue=[]; holdType=null; canHold=true;
   score=0; lines=0; level=1; combo=-1; harem=new Set();
-  gameOver=false; paused=false; dropAcc=0; particles=[]; animT=0;
+  gameOver=false; paused=false; dropAcc=0; garbageTimer=0; pendingGarbage=false; particles=[]; animT=0;
   initQueue(); spawn();
   renderHarem(); updateHUD();
   const ov = document.getElementById('overlay');
